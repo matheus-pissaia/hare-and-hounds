@@ -171,7 +171,7 @@ class PlayerInterface:
 
         if not in_node_bounds:
             # Snap back to original position
-            self._canvas.moveto(
+            return self._canvas.moveto(
                 self.__dragging_item[0],
                 self.__dragging_item[1][0],
                 self.__dragging_item[1][1],
