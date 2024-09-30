@@ -23,7 +23,6 @@ class PlayerInterface:
     purple = "#9966FF"
     line_color = "#FFFFFF"
 
-    # TODO improve positions calc
     # Node positions (X, Y)
     nodes = [
         (middle[0] - (node_gap * 2), middle[1]),  # Outer Left
@@ -67,7 +66,7 @@ class PlayerInterface:
 
     __hare = Piece(Animal.HARE)
     __hounds = (Piece(Animal.HOUND), Piece(Animal.HOUND), Piece(Animal.HOUND))
-    __dragging_item: int | None = None
+    __dragging_item: tuple[int, tuple[int, int]] | None = None  # TODO improve type
 
     def __init__(self):
         # Init Hare position
@@ -142,7 +141,11 @@ class PlayerInterface:
         if not item or len(item) == 0:
             return
 
-        self.__dragging_item = item[0]
+        coord = self._canvas.coords(item[0])
+        self.__dragging_item = (
+            item[0],
+            (coord[0] + self.circle_radius, coord[1] + self.circle_radius),
+        )
 
     def drag(self, event):
         if not self.__dragging_item:
@@ -151,13 +154,12 @@ class PlayerInterface:
         x = event.x
         y = event.y
         self._canvas.moveto(
-            self.__dragging_item,
+            self.__dragging_item[0],
             x - self.circle_radius,
             y - self.circle_radius,
         )
 
     def end_drag(self, event):
-        # TODO snap to nearest node
         if not self.__dragging_item:
             return
 
@@ -168,11 +170,16 @@ class PlayerInterface:
         )
 
         if not in_node_bounds:
-            return
+            # Snap back to original position
+            self._canvas.moveto(
+                self.__dragging_item[0],
+                self.__dragging_item[1][0],
+                self.__dragging_item[1][1],
+            )
 
         self.__hare.position = closest_node
         self._canvas.moveto(
-            self.__dragging_item,
+            self.__dragging_item[0],
             closest_node[0] - self.circle_radius,
             closest_node[1] - self.circle_radius,
         )
