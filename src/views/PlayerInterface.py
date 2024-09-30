@@ -142,10 +142,7 @@ class PlayerInterface:
             return
 
         coord = self._canvas.coords(item[0])
-        self.__dragging_item = (
-            item[0],
-            (coord[0] + self.circle_radius, coord[1] + self.circle_radius),
-        )
+        self.__dragging_item = (item[0], (coord[0], coord[1]))
 
     def drag(self, event):
         if not self.__dragging_item:
