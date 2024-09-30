@@ -1,20 +1,26 @@
+import math
 import tkinter as tk
+
+from enums.Animal import Animal
+from models.Piece import Piece
+from views.MenuBar import Menubar
 
 
 class PlayerInterface:
     _tk: tk.Tk
     _canvas: tk.Canvas
+    __menubar: Menubar
 
-    window_width = 1028
+    window_width = 1280
     window_height = 720
     middle = (window_width / 2, window_height / 2)
     node_gap = 200
     circle_radius = 40
 
     # Colors
-    node_color_yellow = "#FFCC00"
-    node_color_purple = "#9966FF"
-    node_color_orange = "#FFA500"
+    yellow = "#FFCC00"
+    red = "#FF0000"
+    purple = "#9966FF"
     line_color = "#FFFFFF"
 
     # TODO improve positions calc
@@ -59,8 +65,21 @@ class PlayerInterface:
         (10, 9),
     ]
 
+    __hare = Piece(Animal.HARE)
+    __hounds = (Piece(Animal.HOUND), Piece(Animal.HOUND), Piece(Animal.HOUND))
+    __dragging_item: int | None = None
+
     def __init__(self):
+        # Init Hare position
+        self.__hare.position = self.nodes[10]
+
+        # Init Hounds positions
+        self.__hounds[0].position = self.nodes[0]
+        self.__hounds[1].position = self.nodes[1]
+        self.__hounds[2].position = self.nodes[3]
+
         self._tk = tk.Tk()
+        self._tk.resizable(False, False)
         self._canvas = tk.Canvas(
             self._tk, width=self.window_width, height=self.window_height, bg="#CCCCCC"
         )
@@ -68,14 +87,14 @@ class PlayerInterface:
         self._tk.title("Hare and Hounds")
         self._tk.wm_iconphoto(False, tk.PhotoImage(file="src/images/icon.png"))
 
-        menubar = tk.Menu(self._tk)
-        self._tk.config(menu=menubar)
-
-        file_menu = tk.Menu(menubar, tearoff=False)
-        file_menu.add_command(label="Exit", command=self._tk.destroy)
-        menubar.add_cascade(label="File", menu=file_menu)
+        self.__menubar = Menubar(self._tk)
+        self._tk.config(menu=self.__menubar)
 
         self._canvas.pack()
+
+        self._canvas.tag_bind("draggable", "<ButtonPress-1>", self.start_drag)
+        self._canvas.tag_bind("draggable", "<B1-Motion>", self.drag)
+        self._canvas.tag_bind("draggable", "<ButtonRelease-1>", self.end_drag)
 
     def draw_board(self):
         for edge in self.edges:
@@ -91,10 +110,87 @@ class PlayerInterface:
                 y - self.circle_radius,
                 x + self.circle_radius,
                 y + self.circle_radius,
-                fill=self.node_color_purple,
+                fill=self.purple,
                 outline="",
             )
 
+    def draw_pieces(self):
+        self._canvas.create_oval(
+            self.__hare.position[0] - self.circle_radius,
+            self.__hare.position[1] - self.circle_radius,
+            self.__hare.position[0] + self.circle_radius,
+            self.__hare.position[1] + self.circle_radius,
+            fill=self.yellow,
+            outline="",
+            tags=("draggable", "hare"),
+        )
+
+        for i in range(3):
+            self._canvas.create_oval(
+                self.__hounds[i].position[0] - self.circle_radius,
+                self.__hounds[i].position[1] - self.circle_radius,
+                self.__hounds[i].position[0] + self.circle_radius,
+                self.__hounds[i].position[1] + self.circle_radius,
+                fill=self.red,
+                outline="",
+                tags="draggable",
+            )
+
+    def start_drag(self, event):
+        item = self._canvas.find_withtag(tk.CURRENT)
+
+        if not item or len(item) == 0:
+            return
+
+        self.__dragging_item = item[0]
+
+    def drag(self, event):
+        if not self.__dragging_item:
+            return
+
+        x = event.x
+        y = event.y
+        self._canvas.moveto(
+            self.__dragging_item,
+            x - self.circle_radius,
+            y - self.circle_radius,
+        )
+
+    def end_drag(self, event):
+        # TODO snap to nearest node
+        if not self.__dragging_item:
+            return
+
+        closest_node = self.get_closest_node(event.x, event.y)
+        in_node_bounds = (
+            abs(closest_node[0] - event.x) <= self.circle_radius
+            and abs(closest_node[1] - event.y) <= self.circle_radius
+        )
+
+        if not in_node_bounds:
+            return
+
+        self.__hare.position = closest_node
+        self._canvas.moveto(
+            self.__dragging_item,
+            closest_node[0] - self.circle_radius,
+            closest_node[1] - self.circle_radius,
+        )
+        self.__dragging_item = None
+
+    def get_closest_node(self, x, y):
+        min_distance = float("inf")
+        closest_node = None
+
+        for node in self.nodes:
+            distance = math.sqrt((x - node[0]) ** 2 + (y - node[1]) ** 2)
+            if distance < min_distance:
+                min_distance = distance
+                closest_node = node
+
+        return closest_node
+
     def start(self):
         self.draw_board()
+        self.draw_pieces()
         self._tk.mainloop()
