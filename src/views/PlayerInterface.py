@@ -1,12 +1,14 @@
 import math
 import tkinter as tk
-
+from tkinter import messagebox
+from tkinter import simpledialog
 from enums.Animal import Animal
 from models.Piece import Piece
 from views.MenuBar import Menubar
+from dog.dog_interface import DogPlayerInterface
+from dog.dog_actor import DogActor
 
-
-class PlayerInterface:
+class PlayerInterface(DogPlayerInterface):
     _tk: tk.Tk
     _canvas: tk.Canvas
     __menubar: Menubar
@@ -69,6 +71,7 @@ class PlayerInterface:
     __dragging_item: tuple[int, tuple[int, int]] | None = None  # TODO improve type
 
     def __init__(self):
+        super().__init__()
         # Init Hare position
         self.__hare.position = self.nodes[10]
 
@@ -84,7 +87,7 @@ class PlayerInterface:
         )
 
         self._tk.title("Hare and Hounds")
-        self._tk.wm_iconphoto(False, tk.PhotoImage(file="src/images/icon.png"))
+        self._tk.wm_iconphoto(False, tk.PhotoImage(file="../src/images/icon.png"))
 
         self.__menubar = Menubar(self._tk)
         self._tk.config(menu=self.__menubar)
@@ -94,6 +97,10 @@ class PlayerInterface:
         self._canvas.tag_bind("draggable", "<ButtonPress-1>", self.start_drag)
         self._canvas.tag_bind("draggable", "<B1-Motion>", self.drag)
         self._canvas.tag_bind("draggable", "<ButtonRelease-1>", self.end_drag)
+        player_name = simpledialog.askstring(title="Player identification", prompt="Qual o seu nome?")
+        self.dog_server_interface = DogActor()
+        message = self.dog_server_interface.initialize(player_name, self)
+        messagebox.showinfo(message=message)
 
     def draw_board(self):
         for edge in self.edges:
