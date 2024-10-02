@@ -4,6 +4,7 @@ from tkinter import messagebox
 from tkinter import simpledialog
 from enums.Animal import Animal
 from models.Piece import Piece
+from views.Board import Board
 from views.MenuBar import Menubar
 from dog.dog_interface import DogPlayerInterface
 from dog.dog_actor import DogActor
@@ -12,59 +13,33 @@ class PlayerInterface(DogPlayerInterface):
     _tk: tk.Tk
     _canvas: tk.Canvas
     __menubar: Menubar
+    _board: Board
 
     window_width = 1280
     window_height = 720
     middle = (window_width / 2, window_height / 2)
+
     node_gap = 200
     circle_radius = 40
+
+    nodes = [
+    (middle[0] - (node_gap * 2), middle[1]),  # Outer Left
+    (middle[0] - node_gap, middle[1] - node_gap),  # Top Left
+    (middle[0] - node_gap, middle[1]),  # Middle Left
+    (middle[0] - node_gap, middle[1] + node_gap),  # Bottom Left
+    (middle[0], middle[1] - node_gap),  # Top
+    middle,
+    (middle[0], middle[1] + node_gap),  # Bottom
+    (middle[0] + node_gap, middle[1] - node_gap),  # Top Right
+    (middle[0] + node_gap, middle[1]),  # Middle Right
+    (middle[0] + node_gap, middle[1] + node_gap),  # Bottom Right
+    (middle[0] + (node_gap * 2), middle[1]),  # Outer Right
+    ]
 
     # Colors
     yellow = "#FFCC00"
     red = "#FF0000"
-    purple = "#9966FF"
-    line_color = "#FFFFFF"
 
-    # Node positions (X, Y)
-    nodes = [
-        (middle[0] - (node_gap * 2), middle[1]),  # Outer Left
-        (middle[0] - node_gap, middle[1] - node_gap),  # Top Left
-        (middle[0] - node_gap, middle[1]),  # Middle Left
-        (middle[0] - node_gap, middle[1] + node_gap),  # Bottom Left
-        (middle[0], middle[1] - node_gap),  # Top
-        middle,
-        (middle[0], middle[1] + node_gap),  # Bottom
-        (middle[0] + node_gap, middle[1] - node_gap),  # Top Right
-        (middle[0] + node_gap, middle[1]),  # Middle Right
-        (middle[0] + node_gap, middle[1] + node_gap),  # Bottom Right
-        (middle[0] + (node_gap * 2), middle[1]),  # Outer Right
-    ]
-
-    # TODO draw edges dynamically
-    edges = [
-        (0, 1),
-        (0, 2),
-        (0, 3),
-        (2, 1),
-        (2, 3),
-        (4, 1),
-        (4, 7),
-        (5, 1),
-        (5, 2),
-        (5, 3),
-        (5, 4),
-        (5, 6),
-        (5, 7),
-        (5, 8),
-        (5, 9),
-        (6, 3),
-        (6, 9),
-        (8, 7),
-        (8, 9),
-        (10, 7),
-        (10, 8),
-        (10, 9),
-    ]
 
     __hare = Piece(Animal.HARE)
     __hounds = (Piece(Animal.HOUND), Piece(Animal.HOUND), Piece(Animal.HOUND))
@@ -72,6 +47,14 @@ class PlayerInterface(DogPlayerInterface):
 
     def __init__(self):
         super().__init__()
+        self._tk = tk.Tk()
+        self._tk.resizable(False, False)
+        self._canvas = tk.Canvas(
+            self._tk, width=self.window_width, height=self.window_height, bg="#CCCCCC"
+        )
+
+        self._board = Board(self.nodes, self._tk, self._canvas)
+        
         # Init Hare position
         self.__hare.position = self.nodes[10]
 
@@ -80,11 +63,6 @@ class PlayerInterface(DogPlayerInterface):
         self.__hounds[1].position = self.nodes[1]
         self.__hounds[2].position = self.nodes[3]
 
-        self._tk = tk.Tk()
-        self._tk.resizable(False, False)
-        self._canvas = tk.Canvas(
-            self._tk, width=self.window_width, height=self.window_height, bg="#CCCCCC"
-        )
 
         self._tk.title("Hare and Hounds")
         self._tk.wm_iconphoto(False, tk.PhotoImage(file="../src/images/icon.png"))
@@ -101,24 +79,6 @@ class PlayerInterface(DogPlayerInterface):
         self.dog_server_interface = DogActor()
         message = self.dog_server_interface.initialize(player_name, self)
         messagebox.showinfo(message=message)
-
-    def draw_board(self):
-        for edge in self.edges:
-            node1 = self.nodes[edge[0]]
-            node2 = self.nodes[edge[1]]
-            self._canvas.create_line(
-                node1[0], node1[1], node2[0], node2[1], width=8, fill=self.line_color
-            )
-
-        for x, y in self.nodes:
-            self._canvas.create_oval(
-                x - self.circle_radius,
-                y - self.circle_radius,
-                x + self.circle_radius,
-                y + self.circle_radius,
-                fill=self.purple,
-                outline="",
-            )
 
     def draw_pieces(self):
         self._canvas.create_oval(
@@ -202,6 +162,6 @@ class PlayerInterface(DogPlayerInterface):
         return closest_node
 
     def start(self):
-        self.draw_board()
+        self._board.draw_board()
         self.draw_pieces()
         self._tk.mainloop()
