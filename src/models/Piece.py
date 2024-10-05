@@ -26,4 +26,6 @@ class Piece:
     @position.setter
     def position(self, new_position: "Position"):
         self.position.piece = None
+
         self.__position = new_position
+        self.__position.piece = self
