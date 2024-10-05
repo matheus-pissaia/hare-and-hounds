@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import simpledialog
+from models.Position import Position
 from views.Board import Board
 from views.MenuBar import Menubar
 from dog.dog_interface import DogPlayerInterface
@@ -12,16 +13,9 @@ class PlayerInterface(DogPlayerInterface):
     __canvas: tk.Canvas
     __menubar: Menubar
     __board: Board
-
-    # Colors
-    yellow = "#FFCC00"
-    red = "#FF0000"
-
-    window_width = 1280
-    window_height = 720
-    circle_radius = 20
-
-    __dragging_item: tuple[int, tuple[int, int]] | None = None  # TODO improve type
+    __window_width = 1280
+    __window_height = 720
+    __dragging_item: tuple[int, Position] | None = None
 
     def __init__(self):
         super().__init__()
@@ -34,9 +28,14 @@ class PlayerInterface(DogPlayerInterface):
         self.__tk.config(menu=self.__menubar)
 
         self.__canvas = tk.Canvas(
-            self.__tk, width=self.window_width, height=self.window_height, bg="#CCCCCC"
+            self.__tk,
+            width=self.__window_width,
+            height=self.__window_height,
+            bg="#CCCCCC",
         )
+
         self.__canvas.pack()
+
         self.__canvas.tag_bind("draggable", "<ButtonPress-1>", self.start_drag)
         self.__canvas.tag_bind("draggable", "<B1-Motion>", self.drag)
         self.__canvas.tag_bind("draggable", "<ButtonRelease-1>", self.end_drag)
@@ -50,65 +49,47 @@ class PlayerInterface(DogPlayerInterface):
         message = self.dog_server_interface.initialize(player_name, self)
         messagebox.showinfo(message=message)
 
-    def start_drag(self, event):
+    def start_drag(self, event: tk.Event):
         item = self.__canvas.find_withtag(tk.CURRENT)
 
         if not item or len(item) == 0:
             return
 
         coord = self.__canvas.coords(item[0])
-        self.__dragging_item = (item[0], (coord[0], coord[1]))
+        from_position = self.__board.get_position(coord[0], coord[1])
 
-    # TODO add drag events pieces
-    def drag(self, event):
+        if not from_position:
+            raise Exception("Piece was intialized with an invalid position")
+
+        self.__dragging_item = (item[0], from_position)
+
+    def drag(self, event: tk.Event):
+        if self.__dragging_item:
+            self.update_piece_screen_position(event.x, event.y)
+
+    def end_drag(self, event: tk.Event):
         if not self.__dragging_item:
             return
 
-        x = event.x
-        y = event.y
-        self.__canvas.moveto(
-            self.__dragging_item[0],
-            x - self.circle_radius,
-            y - self.circle_radius,
-        )
+        from_position = self.__dragging_item[1]
+        to_position = self.__board.get_position(event.x, event.y)
+        valid_move = self.__board.is_valid_move(from_position, to_position)
 
-    def end_drag(self, event):
-        if not self.__dragging_item:
-            return
+        if not to_position or not valid_move:
+            # Return piece back to initial position
+            return self.update_piece_screen_position(from_position.x, from_position.y)
 
-        closest_node = self.get_closest_node(event.x, event.y)
-        in_node_bounds = (
-            abs(closest_node[0] - event.x) <= self.circle_radius
-            and abs(closest_node[1] - event.y) <= self.circle_radius
-        )
+        self.__board.move_piece(from_position, to_position)
+        self.update_piece_screen_position(to_position.x, to_position.y)
 
-        if not in_node_bounds:
-            # Snap back to original position
-            return self.__canvas.moveto(
-                self.__dragging_item[0],
-                self.__dragging_item[1][0],
-                self.__dragging_item[1][1],
-            )
-
-        self.__hare.position = closest_node
-        self.__canvas.moveto(
-            self.__dragging_item[0],
-            closest_node[0] - self.circle_radius,
-            closest_node[1] - self.circle_radius,
-        )
         self.__dragging_item = None
 
-    def get_closest_node(self, x, y):
-        min_distance = float("inf")
-        closest_node = None
-
-        for node in self.nodes:
-            distance = math.sqrt((x - node[0]) ** 2 + (y - node[1]) ** 2)
-            if distance < min_distance:
-                min_distance = distance
-                closest_node = node
-
-        return closest_node
+    def update_piece_screen_position(self, x: int, y: int):
+        self.__canvas.moveto(
+            self.__dragging_item[0],
+            x - self.__board.image_radius,
+            y - self.__board.image_radius,
+        )
 
     def start(self):
         self.__board.draw_board()

@@ -174,3 +174,31 @@ class Board:
             Piece(Animal.HOUND, bottom_left),
             Piece(Animal.HARE, outer_right),
         ]
+
+    def get_position(self, x: int, y: int):
+        for position in self.__positions:
+            distance = math.sqrt((x - position.x) ** 2 + (y - position.y) ** 2)
+
+            if distance <= self.__position_radius:
+                return position
+
+    def is_valid_move(self, from_position: Position, to_position: Position | None):
+        if not to_position:
+            return False
+
+        piece = from_position.piece
+        occupied = to_position.piece
+
+        if (
+            not piece
+            or occupied
+            or from_position == to_position
+            or to_position not in from_position.adjacent_positions
+        ):
+            return False
+
+        return True
+
+    def move_piece(self, from_position: Position, to_position: Position):
+        piece = from_position.piece
+        piece.position = to_position
