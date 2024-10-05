@@ -189,6 +189,7 @@ class Board:
         piece = from_position.piece
         occupied = to_position.piece
 
+        # TODO check if valid piece movement for hounds
         if (
             not piece
             or occupied
