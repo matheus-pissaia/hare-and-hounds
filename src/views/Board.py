@@ -1,3 +1,5 @@
+import math
+from PIL import ImageTk, Image
 import tkinter as tk
 from enums.Animal import Animal
 from models.Position import Position
@@ -23,10 +25,14 @@ class Board:
         self.__init_positions()
         self.__init_pieces()
 
+    @property
+    def positions(self):
+        return self.__positions
+
     def draw_board(self):
         self.__draw_edges()
         self.__draw_positions()
-        # self.__draw_pieces()
+        self.__draw_pieces()
 
     def __draw_positions(self):
         for position in self.__positions:
@@ -57,8 +63,25 @@ class Board:
                     )
 
     def __draw_pieces(self):
-        # TODO add drag event to pieces
-        raise NotImplementedError("TODO implement draw pieces method")
+        self.__hare_image = ImageTk.PhotoImage(
+            Image.open("src/assets/hare.png").resize((128, 128))
+        )
+        self.__hound_image = ImageTk.PhotoImage(
+            Image.open("src/assets/hound.png").resize((128, 128))
+        )
+
+        for piece in self.__pieces:
+            image = (
+                self.__hare_image if piece.animal == Animal.HARE else self.__hound_image
+            )
+
+            self.__canvas.create_image(
+                piece.position.x,
+                piece.position.y,
+                anchor=tk.CENTER,
+                image=image,
+                tags="draggable",
+            )
 
     def __init_positions(self):
         # Make sure to update TK before getting width and height
