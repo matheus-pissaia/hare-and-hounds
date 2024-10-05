@@ -18,6 +18,13 @@ class Board:
     __gap_px = 200
     """Gap in pixels between positions"""
 
+    __image_radius = 64
+    __image_size = __image_radius * 2
+    """Size of the image in px"""
+
+    __hare_image: ImageTk.PhotoImage
+    __hound_image: ImageTk.PhotoImage
+
     def __init__(self, tk: tk.Tk, canvas: tk.Canvas):
         self.__tk = tk
         self.__canvas = canvas
@@ -28,6 +35,10 @@ class Board:
     @property
     def positions(self):
         return self.__positions
+
+    @property
+    def image_radius(self):
+        return self.__image_radius
 
     def draw_board(self):
         self.__draw_edges()
@@ -64,10 +75,14 @@ class Board:
 
     def __draw_pieces(self):
         self.__hare_image = ImageTk.PhotoImage(
-            Image.open("src/assets/hare.png").resize((128, 128))
+            Image.open("src/assets/hare.png").resize(
+                (self.__image_size, self.__image_size)
+            )
         )
         self.__hound_image = ImageTk.PhotoImage(
-            Image.open("src/assets/hound.png").resize((128, 128))
+            Image.open("src/assets/hound.png").resize(
+                (self.__image_size, self.__image_size)
+            )
         )
 
         for piece in self.__pieces:
