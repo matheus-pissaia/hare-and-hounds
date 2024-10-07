@@ -7,26 +7,24 @@ if typing.TYPE_CHECKING:
 
 
 class Piece:
-    _animal: Animal
-    _position: "Position"
+    __animal: Animal
+    __position: "Position"
 
     def __init__(self, animal: Animal, position: "Position"):
-        self._animal = animal
-        self._position = None
-        self.position = position
+        self.__animal = animal
+        self.__position = position
+        self.__position.piece = self
 
     @property
     def animal(self) -> Animal:
-        return self._animal
+        return self.__animal
 
     @property
     def position(self) -> "Position":
-        return self._position
+        return self.__position
 
     @position.setter
     def position(self, new_position: "Position"):
-        if self._position:
-            self._position.piece = None  # Remove piece posicao antiga
-
-        self._position = new_position
-        self._position.piece = self  # move piece para nova posicao
+        self.position.piece = None
+        self.__position = new_position
+        self.__position.piece = self

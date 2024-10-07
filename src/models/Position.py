@@ -6,43 +6,43 @@ if TYPE_CHECKING:
 
 
 class Position:
-    _x: int
-    _y: int
-    _piece: Optional["Piece"]
-    _adjacent_positions: list["Position"]
+    __x: int
+    __y: int
+    __piece: Optional["Piece"]
+    __adjacent_positions: list["Position"]
 
     def __init__(self, x: int, y: int):
-        self._x = x
-        self._y = y
-        self._adjacent_positions = []
-        self._piece = None
+        self.__x = x
+        self.__y = y
+        self.__adjacent_positions = []
+        self.__piece = None
 
     @property
     def x(self) -> int:
-        return self._x
+        return self.__x
 
     @property
     def y(self) -> int:
-        return self._y
+        return self.__y
 
     @property
     def adjacent_positions(self) -> list["Position"]:
-        return self._adjacent_positions
+        return self.__adjacent_positions
 
     @property
     def piece(self) -> Optional["Piece"]:
-        return self._piece
+        return self.__piece
 
     @piece.setter
     def piece(self, piece: Optional["Piece"]):
-        self._piece = piece
+        self.__piece = piece
 
     def add_adjacent_position(self, position: "Position"):
         if position is self:
             raise ValueError("Position cannot be adjacent to itself")
 
-        if position not in self._adjacent_positions:
-            self._adjacent_positions.append(position)
+        if position not in self.__adjacent_positions:
+            self.__adjacent_positions.append(position)
 
         if self not in position.adjacent_positions:
             position.adjacent_positions.append(self)

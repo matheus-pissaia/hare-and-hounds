@@ -7,27 +7,27 @@ from models.Piece import Piece
 
 
 class Board:
-    _positions: list[Position]
+    __positions: list[Position]
 
     #Atributos da implementacao visual
-    _tk: tk.Tk
-    _canvas: tk.Canvas
-    _position_radius = 40
+    __tk: tk.Tk
+    __canvas: tk.Canvas
+    __position_radius = 40
     """Radius of the position circle in px"""
 
-    _gap_px = 200
+    __gap_px = 200
     """Gap in pixels between positions"""
 
-    _image_radius = 64
-    _image_size = _image_radius * 2
+    __image_radius = 64
+    __image_size = __image_radius * 2
     """Size of the image in px"""
 
-    _hare_image: ImageTk.PhotoImage
-    _hound_image: ImageTk.PhotoImage
+    __hare_image: ImageTk.PhotoImage
+    __hound_image: ImageTk.PhotoImage
 
     def __init__(self, tk_root: tk.Tk, canvas: tk.Canvas):
-        self._tk = tk_root
-        self._canvas = canvas
+        self.__tk = tk_root
+        self.__canvas = canvas
 
         self._init_images()
         self._init_positions()
@@ -35,49 +35,49 @@ class Board:
 
     @property
     def positions(self):
-        return self._positions
+        return self.__positions
 
     @property
     def image_radius(self):
-        return self._image_radius
+        return self.__image_radius
 
     def draw_board(self):
-        self._draw_edges()
-        self._draw_positions()
-        self._draw_pieces()
+        self.__draw_edges()
+        self.__draw_positions()
+        self.__draw_pieces()
 
     def _init_images(self):
         """Initialize images once to avoid reloading every time."""
         self._hare_image = ImageTk.PhotoImage(
             Image.open("src/assets/hare.png").resize(
-                (self._image_size, self._image_size)
+                (self.__image_size, self.__image_size)
             )
         )
         self._hound_image = ImageTk.PhotoImage(
             Image.open("src/assets/hound.png").resize(
-                (self._image_size, self._image_size)
+                (self.__image_size, self.__image_size)
             )
         )
 
-    def _draw_positions(self):
+    def __draw_positions(self):
         for position in self._positions:
-            self._canvas.create_oval(
-                position.x - self._position_radius,
-                position.y - self._position_radius,
-                position.x + self._position_radius,
-                position.y + self._position_radius,
+            self.__canvas.create_oval(
+                position.x - self.__position_radius,
+                position.y - self.__position_radius,
+                position.x + self.__position_radius,
+                position.y + self.__position_radius,
                 fill="black",
                 outline="",
             )
 
-    def _draw_edges(self):
+    def __draw_edges(self):
         visited = set()
 
         for position in self._positions:
             visited.add(position)
             for adjacent_position in position.adjacent_positions:
                 if adjacent_position not in visited:
-                    self._canvas.create_line(
+                    self.__canvas.create_line(
                         position.x,
                         position.y,
                         adjacent_position.x,
@@ -86,7 +86,7 @@ class Board:
                         fill="white",
                     )
 
-    def _draw_pieces(self):
+    def __draw_pieces(self):
         for position in self._positions:
             piece = position.piece
             if piece:
@@ -95,7 +95,7 @@ class Board:
                     if piece.animal == Animal.HARE
                     else self._hound_image
                 )
-                self._canvas.create_image(
+                self.__canvas.create_image(
                     position.x,
                     position.y,
                     anchor=tk.CENTER,
@@ -105,27 +105,27 @@ class Board:
 
     def _init_positions(self):
         # Make sure to update TK before getting width and height
-        self._tk.update()
+        self.__tk.update()
 
-        window_width = self._canvas.winfo_width()
-        window_height = self._canvas.winfo_height()
+        window_width = self.__canvas.winfo_width()
+        window_height = self.__canvas.winfo_height()
 
         mid_x, mid_y = window_width / 2, window_height / 2
 
         positions_dict = {}
 
         # posicoes tabuleiro
-        positions_dict['outer_left'] = Position(mid_x - (self._gap_px * 2), mid_y)
-        positions_dict['top_left'] = Position(mid_x - self._gap_px, mid_y - self._gap_px)
-        positions_dict['middle_left'] = Position(mid_x - self._gap_px, mid_y)
-        positions_dict['bottom_left'] = Position(mid_x - self._gap_px, mid_y + self._gap_px)
-        positions_dict['top'] = Position(mid_x, mid_y - self._gap_px)
+        positions_dict['outer_left'] = Position(mid_x - (self.__gap_px * 2), mid_y)
+        positions_dict['top_left'] = Position(mid_x - self.__gap_px, mid_y - self.__gap_px)
+        positions_dict['middle_left'] = Position(mid_x - self.__gap_px, mid_y)
+        positions_dict['bottom_left'] = Position(mid_x - self.__gap_px, mid_y + self.__gap_px)
+        positions_dict['top'] = Position(mid_x, mid_y - self.__gap_px)
         positions_dict['middle'] = Position(mid_x, mid_y)
-        positions_dict['bottom'] = Position(mid_x, mid_y + self._gap_px)
-        positions_dict['top_right'] = Position(mid_x + self._gap_px, mid_y - self._gap_px)
-        positions_dict['middle_right'] = Position(mid_x + self._gap_px, mid_y)
-        positions_dict['bottom_right'] = Position(mid_x + self._gap_px, mid_y + self._gap_px)
-        positions_dict['outer_right'] = Position(mid_x + (self._gap_px * 2), mid_y)
+        positions_dict['bottom'] = Position(mid_x, mid_y + self.__gap_px)
+        positions_dict['top_right'] = Position(mid_x + self.__gap_px, mid_y - self.__gap_px)
+        positions_dict['middle_right'] = Position(mid_x + self.__gap_px, mid_y)
+        positions_dict['bottom_right'] = Position(mid_x + self.__gap_px, mid_y + self.__gap_px)
+        positions_dict['outer_right'] = Position(mid_x + (self.__gap_px * 2), mid_y)
 
         # posicoes adjacentes
         positions_dict['outer_left'].add_adjacent_position(positions_dict['top_left'])
@@ -169,9 +169,8 @@ class Board:
     def get_position(self, x: int, y: int):
         for position in self._positions:
             distance = math.hypot(x - position.x, y - position.y)
-            if distance <= self._position_radius:
+            if distance <= self.__position_radius:
                 return position
-        return None
 
     def is_valid_move(self, from_position: Position, to_position: Position | None):
         if not to_position:
@@ -188,9 +187,8 @@ class Board:
         ):
             return False
 
-        if piece.animal == Animal.HOUND:
-            if to_position.x < from_position.x:
-                return False
+        if piece.animal == Animal.HOUND and to_position.x < from_position.x:
+            return False
 
         return True
 
