@@ -29,9 +29,9 @@ class Board:
         self.__tk = tk_root
         self.__canvas = canvas
 
-        self._init_images()
-        self._init_positions()
-        self._init_pieces()
+        self.__init_images()
+        self.__init_positions()
+        self.__init_pieces()
 
     @property
     def positions(self):
@@ -46,7 +46,7 @@ class Board:
         self.__draw_positions()
         self.__draw_pieces()
 
-    def _init_images(self):
+    def __init_images(self):
         """Initialize images once to avoid reloading every time."""
         self._hare_image = ImageTk.PhotoImage(
             Image.open("src/images/hare.png").resize(
@@ -60,7 +60,7 @@ class Board:
         )
 
     def __draw_positions(self):
-        for position in self._positions:
+        for position in self.__positions:
             self.__canvas.create_oval(
                 position.x - self.__position_radius,
                 position.y - self.__position_radius,
@@ -73,7 +73,7 @@ class Board:
     def __draw_edges(self):
         visited = set()
 
-        for position in self._positions:
+        for position in self.__positions:
             visited.add(position)
             for adjacent_position in position.adjacent_positions:
                 if adjacent_position not in visited:
@@ -87,13 +87,13 @@ class Board:
                     )
 
     def __draw_pieces(self):
-        for position in self._positions:
+        for position in self.__positions:
             piece = position.piece
             if piece:
                 image = (
-                    self._hare_image
+                    self.__hare_image
                     if piece.animal == Animal.HARE
-                    else self._hound_image
+                    else self.__hound_image
                 )
                 self.__canvas.create_image(
                     position.x,
@@ -103,7 +103,7 @@ class Board:
                     tags="draggable",
                 )
 
-    def _init_positions(self):
+    def __init_positions(self):
         # Make sure to update TK before getting width and height
         self.__tk.update()
 
@@ -159,15 +159,15 @@ class Board:
 
         self._positions = list(positions_dict.values())
 
-    def _init_pieces(self):
-        positions = self._positions
+    def __init_pieces(self):
+        positions = self.__positions
         Piece(Animal.HOUND, positions[0])   # outer_left
         Piece(Animal.HOUND, positions[1])   # top_left
         Piece(Animal.HOUND, positions[3])   # bottom_left
         Piece(Animal.HARE, positions[10])   # outer_right
 
     def get_position(self, x: int, y: int):
-        for position in self._positions:
+        for position in self.__positions:
             distance = math.hypot(x - position.x, y - position.y)
             if distance <= self.__position_radius:
                 return position
