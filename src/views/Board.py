@@ -49,12 +49,12 @@ class Board:
     def _init_images(self):
         """Initialize images once to avoid reloading every time."""
         self._hare_image = ImageTk.PhotoImage(
-            Image.open("src/assets/hare.png").resize(
+            Image.open("src/images/hare.png").resize(
                 (self.__image_size, self.__image_size)
             )
         )
         self._hound_image = ImageTk.PhotoImage(
-            Image.open("src/assets/hound.png").resize(
+            Image.open("src/images/hound.png").resize(
                 (self.__image_size, self.__image_size)
             )
         )

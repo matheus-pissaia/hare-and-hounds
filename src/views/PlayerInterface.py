@@ -22,7 +22,7 @@ class PlayerInterface(DogPlayerInterface):
         self.__tk = tk.Tk()
         self.__tk.resizable(False, False)
         self.__tk.title("Hare and Hounds")
-        self.__tk.wm_iconphoto(False, tk.PhotoImage(file="../src/images/icon.png"))
+        self.__tk.wm_iconphoto(False, tk.PhotoImage(file="src/images/icon.png"))
 
         self.__menubar = Menubar(self.__tk)
         self.__tk.config(menu=self.__menubar)
