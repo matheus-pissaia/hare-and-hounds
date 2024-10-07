@@ -48,12 +48,12 @@ class Board:
 
     def __init_images(self):
         """Initialize images once to avoid reloading every time."""
-        self._hare_image = ImageTk.PhotoImage(
+        self.__hare_image = ImageTk.PhotoImage(
             Image.open("src/images/hare.png").resize(
                 (self.__image_size, self.__image_size)
             )
         )
-        self._hound_image = ImageTk.PhotoImage(
+        self.__hound_image = ImageTk.PhotoImage(
             Image.open("src/images/hound.png").resize(
                 (self.__image_size, self.__image_size)
             )
@@ -157,7 +157,7 @@ class Board:
         positions_dict['outer_right'].add_adjacent_position(positions_dict['middle_right'])
         positions_dict['outer_right'].add_adjacent_position(positions_dict['bottom_right'])
 
-        self._positions = list(positions_dict.values())
+        self.__positions = list(positions_dict.values())
 
     def __init_pieces(self):
         positions = self.__positions
