@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 class Position:
     __x: int
     __y: int
-    __adjacent_positions: list["Position"]
     __piece: Optional["Piece"]
+    __adjacent_positions: list["Position"]
 
     def __init__(self, x: int, y: int):
         self.__x = x
