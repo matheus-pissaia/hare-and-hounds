@@ -75,7 +75,26 @@ class PlayerInterface(DogPlayerInterface):
 
         else:
             self.show_game_info_message(GameMessages.WAITING_OPPONENT)
+
+    def receive_start(self, start_status: StartStatus):
+        self.__board.start_match(start_status.get_players())
+        self.setup_game()
+
+        if self.__board.is_local_player_turn():
+            self.show_game_info_message(GameMessages.START_DRAG)
+
+        else:
+            self.show_game_info_message(GameMessages.WAITING_OPPONENT)
+
+    def setup_game(self):
+        self.__board.reset()
+        self.update_menubar()
+
     def start_drag(self, event: tk.Event):
+        # Disable dragging if it is not local player turn
+        if not self.__board.is_local_player_turn():
+            return
+
         item = self.__canvas.find_withtag(tk.CURRENT)
 
         if not item or len(item) == 0:
@@ -84,10 +103,15 @@ class PlayerInterface(DogPlayerInterface):
         coord = self.__canvas.coords(item[0])
         from_position = self.__board.get_position(coord[0], coord[1])
 
-        if not from_position:
-            raise Exception("Piece was intialized with an invalid position")
+        if not from_position or not from_position.piece:
+            return
 
-        self.__dragging_item = (item[0], from_position)
+        # Check if chosen piece belongs to local player
+        if self.__board.is_local_player_piece(from_position.piece):
+            self.__dragging_item = (item[0], from_position)
+
+        else:
+            self.show_game_info_message(GameMessages.INVALID_PIECE)
 
     def drag(self, event: tk.Event):
         if self.__dragging_item:
@@ -102,20 +126,97 @@ class PlayerInterface(DogPlayerInterface):
         valid_move = self.__board.is_valid_move(from_position, to_position)
 
         if not to_position or not valid_move:
+            self.show_game_info_message(GameMessages.INVALID_MOVE)
             # Return piece back to initial position
-            return self.update_piece_screen_position(from_position.x, from_position.y)
+            self.update_piece_screen_position(from_position.x, from_position.y)
 
-        self.__board.move_piece(from_position, to_position)
-        self.update_piece_screen_position(to_position.x, to_position.y)
+        else:
+            self.__board.move_piece(from_position, to_position)
+            self.update_piece_screen_position(to_position.x, to_position.y)
+            self.send_move(from_position, to_position)
 
         self.__dragging_item = None
 
-    def update_piece_screen_position(self, x: int, y: int):
+    def update_piece_screen_position(
+        self,
+        x: int,
+        y: int,
+        item_id: int | None = None,
+    ):
+        if not item_id and not self.__dragging_item:
+            return
+
         self.__canvas.moveto(
-            self.__dragging_item[0],
+            item_id or self.__dragging_item[0],
             x - self.__board.image_radius,
             y - self.__board.image_radius,
         )
+
+    def update_menubar(self):
+        if self.__board.is_match_in_progress():
+            self.__menubar.match_dropdown.entryconfigure(
+                "Iniciar partida", state="disabled"
+            )
+        else:
+            self.__menubar.match_dropdown.entryconfigure(
+                "Iniciar partida", state="normal"
+            )
+
+    def update_move_counter(self):
+        self.__board.increase_move_counter()
+        self.__game_move_counter["text"] = f"Movimentos: {self.__board.move_counter}"
+
+    def receive_move(self, move: dict):
+        to_pos_dict: dict[str, int] | None = move["to_pos"]
+        from_pos_dict: dict[str, int] | None = move["from_pos"]
+
+        if not to_pos_dict or not from_pos_dict:
+            return
+
+        to_pos = self.__board.get_position(to_pos_dict["x"], to_pos_dict["y"])
+        from_pos = self.__board.get_position(from_pos_dict["x"], from_pos_dict["y"])
+
+        # Check if positions exist and if "from_pos" has a piece
+        if not from_pos or not from_pos.piece or not to_pos:
+            return
+
+        # Find closest piece from "from_pos"
+        item = self.__canvas.find_closest(from_pos.x, from_pos.y)
+
+        if not item or len(item) == 0:
+            return
+
+        self.__board.toggle_players_turn()
+        self.__board.move_piece(from_pos, to_pos)
+
+        self.update_move_counter()
+        self.show_game_info_message(GameMessages.YOUR_TURN)
+        self.update_piece_screen_position(to_pos.x, to_pos.y, item[0])
+
+    def receive_withdrawal_notification(self):
+        self.show_game_info_message(GameMessages.ABANDONED)
+        self.__board.receive_withdrawal_notification()
+        self.update_menubar()
+
+    def send_move(self, from_pos: Position, to_pos: Position):
+        # TODO evalute match finish
+        self.__board.toggle_players_turn()
+        self.__dog_server_interface.send_move(
+            {
+                "from_pos": {
+                    "x": from_pos.x,
+                    "y": from_pos.y,
+                },
+                "to_pos": {
+                    "x": to_pos.x,
+                    "y": to_pos.y,
+                },
+                "match_status": "next",
+            }
+        )
+
+        self.update_move_counter()
+        self.show_game_info_message(GameMessages.WAITING_OPPONENT)
 
     def show_game_info_message(self, message: GameMessages):
         self.__game_messages["text"] = message.value
