@@ -45,6 +45,36 @@ class PlayerInterface(DogPlayerInterface):
     def start(self):
         self.__board.draw_board()
         self.__tk.mainloop()
+
+    def start_match_command(self):
+        # Do nothing if the game already started
+        if self.__board.is_match_in_progress():
+            return
+
+        answer = messagebox.askyesno("START", "Deseja iniciar uma nova partida?")
+
+        # Do nothing if player do not want to start a match
+        if not answer:
+            return
+
+        # Start a new match with 2 players
+        start_status = self.__dog_server_interface.start_match(2)
+        code = start_status.get_code()
+        message = start_status.get_message()
+
+        if code == "0" or code == "1":
+            messagebox.showinfo(message=message)
+        else:
+            self.__board.start_match(start_status.get_players())
+            self.setup_game()
+
+            messagebox.showinfo(message=start_status.get_message())
+
+        if self.__board.is_local_player_turn():
+            self.show_game_info_message(GameMessages.START_DRAG)
+
+        else:
+            self.show_game_info_message(GameMessages.WAITING_OPPONENT)
     def start_drag(self, event: tk.Event):
         item = self.__canvas.find_withtag(tk.CURRENT)
 
