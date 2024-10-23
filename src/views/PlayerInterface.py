@@ -87,6 +87,19 @@ class PlayerInterface(DogPlayerInterface):
             y - self.__board.image_radius,
         )
 
+    def show_game_info_message(self, message: GameMessages):
+        self.__game_messages["text"] = message.value
+
+        foreground_color = "black"
+
+        if message == GameMessages.YOU_WIN:
+            foreground_color = "green"
+
+        elif message == GameMessages.INVALID_MOVE or message == GameMessages.YOU_LOSE:
+            foreground_color = "red"
+
+        self.__game_messages["foreground"] = foreground_color
+
     def __init_window(self):
         self.__tk = tk.Tk()
         self.__tk.resizable(False, False)
