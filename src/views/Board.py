@@ -247,6 +247,9 @@ class Board:
     def is_local_player_turn(self):
         return self.__match_status == MatchStatus.LOCAL_PLAYER_TURN
 
+    def is_local_player_animal(self, animal: str):
+        return self.__local_player.animal.value == animal
+
     def move_piece(self, from_position: Position, to_position: Position):
         piece = from_position.piece
         piece.position = to_position
@@ -334,8 +337,48 @@ class Board:
         self.__init_pieces()
         self.__draw_pieces()
 
-    def evaluate_match_finish(self):
-        # TODO match finishes if move counter gets to 50 or
-        # HARE does not have an empty position to move or
-        # HOUNDS can no longer capture HARE
-        pass
+    def set_winner(self, animal: str):
+        if self.is_local_player_animal(animal):
+            self.__local_player.set_winner()
+
+        else:
+            self.__remote_player.set_winner()
+
+        self.__match_status = MatchStatus.FINISHED
+
+    def evaluate_hare_win(self, hare: Piece, hounds: list[Piece]):
+        hare_escaped = True
+
+        for hound in hounds:
+            # Check if there's at least one hound on the left of the hare
+            if hound.position.x < hare.position.x:
+                hare_escaped = False
+                break
+
+        if hare_escaped or self.move_counter >= 50:
+            return True
+
+        return False
+
+    def evaluate_hound_win(self, hare: Piece):
+        # If there's at least one empty adjacent position from the Hare, game continues
+        for adjacent_position in hare.position.adjacent_positions:
+            if not adjacent_position.piece:
+                return False
+
+        return True
+
+    def evaluate_match_winner(self):
+        animal_winner: Animal | None = None
+        hare, hounds = self.__pieces
+
+        if self.evaluate_hare_win(hare, hounds):
+            animal_winner = Animal.HARE
+
+        if self.evaluate_hound_win(hare):
+            animal_winner = Animal.HOUND
+
+        if animal_winner:
+            self.set_winner(animal_winner.value)
+
+        return animal_winner

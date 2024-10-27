@@ -140,6 +140,18 @@ class PlayerInterface(DogPlayerInterface):
 
             self.__dog_server_interface.send_move(move_to_send)
 
+            animal_winner = move_to_send["winner"]
+            game_message = GameMessages.WAITING_OPPONENT
+
+            if animal_winner:
+                if self.__board.is_local_player_animal(animal_winner):
+                    game_message = GameMessages.YOU_WIN
+
+                else:
+                    game_message = GameMessages.YOU_LOSE
+
+            self.show_game_info_message(game_message)
+
         self.__dragging_item = None
 
     def update_piece_screen_position(
@@ -175,6 +187,7 @@ class PlayerInterface(DogPlayerInterface):
         to_pos_coord: list[int] = move["to_pos"]
         from_pos_coord: list[int] = move["from_pos"]
         match_status: Literal["next", "finished"] = move["match_status"]
+        animal_winner: str | None = move["winner"]
 
         to_pos = self.__board.get_position(to_pos_coord[0], to_pos_coord[1])
         from_pos = self.__board.get_position(from_pos_coord[0], from_pos_coord[1])
@@ -193,6 +206,19 @@ class PlayerInterface(DogPlayerInterface):
 
         self.update_move_counter()
         self.update_piece_screen_position(to_pos.x, to_pos.y, item[0])
+
+        game_message = GameMessages.YOUR_TURN
+
+        if match_status == "finished" and animal_winner:
+            self.__board.set_winner(animal_winner)
+
+            if self.__board.is_local_player_animal(animal_winner):
+                game_message = GameMessages.YOU_WIN
+
+            else:
+                game_message = GameMessages.YOU_LOSE
+
+        self.show_game_info_message(game_message)
 
     def receive_withdrawal_notification(self):
         self.show_game_info_message(GameMessages.ABANDONED)
