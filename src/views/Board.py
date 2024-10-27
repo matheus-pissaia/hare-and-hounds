@@ -10,6 +10,7 @@ from models.Piece import Piece
 
 class Board:
     __positions: list[Position]
+    __pieces: tuple[Piece, list[Piece]]  # Hare, Hounds
     __match_status = MatchStatus.NOT_STARTED
     __move_counter = 0
 
@@ -204,10 +205,15 @@ class Board:
 
     def __init_pieces(self):
         positions = self.__positions
-        Piece(Animal.HOUND, positions[0])  # outer_left
-        Piece(Animal.HOUND, positions[1])  # top_left
-        Piece(Animal.HOUND, positions[3])  # bottom_left
-        Piece(Animal.HARE, positions[10])  # outer_right
+
+        self.__pieces = (
+            Piece(Animal.HARE, positions[10]),  # outer_right
+            [
+                Piece(Animal.HOUND, positions[0]),  # outer_left
+                Piece(Animal.HOUND, positions[1]),  # top_left
+                Piece(Animal.HOUND, positions[3]),  # bottom_left
+            ],
+        )
 
     def get_position(self, x: int, y: int):
         for position in self.__positions:
