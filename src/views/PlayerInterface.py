@@ -1,14 +1,16 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import simpledialog
+from typing import Literal
 
+from dog.dog_actor import DogActor
 from dog.start_status import StartStatus
-from enums.GameMessages import GameMessages
-from models.Position import Position
+from dog.dog_interface import DogPlayerInterface
+
 from views.Board import Board
 from views.MenuBar import Menubar
-from dog.dog_interface import DogPlayerInterface
-from dog.dog_actor import DogActor
+from models.Position import Position
+from enums.GameMessages import GameMessages
 
 
 class PlayerInterface(DogPlayerInterface):
