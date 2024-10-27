@@ -311,7 +311,6 @@ class Board:
 
     def reset(self):
         match_status = self.__match_status
-
         # Only reset board if match was finished or abandoned
         if (
             match_status != MatchStatus.FINISHED
@@ -323,10 +322,7 @@ class Board:
         self.__canvas.delete("piece")
 
         for position in self.__positions:
-            piece = position.piece
-
-            if piece:
-                piece.position = None
+            if position.piece:
                 position.piece = None
 
         self.__init_pieces()
