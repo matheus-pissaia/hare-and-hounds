@@ -1,14 +1,16 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import simpledialog
+from typing import Literal
 
+from dog.dog_actor import DogActor
 from dog.start_status import StartStatus
-from enums.GameMessages import GameMessages
-from models.Position import Position
+from dog.dog_interface import DogPlayerInterface
+
 from views.Board import Board
 from views.MenuBar import Menubar
-from dog.dog_interface import DogPlayerInterface
-from dog.dog_actor import DogActor
+from models.Position import Position
+from enums.GameMessages import GameMessages
 
 
 class PlayerInterface(DogPlayerInterface):
@@ -65,8 +67,8 @@ class PlayerInterface(DogPlayerInterface):
         if code == "0" or code == "1":
             messagebox.showinfo(message=message)
         else:
-            self.__board.start_match(start_status.get_players())
             self.setup_game()
+            self.__board.start_match(start_status.get_players())
 
             messagebox.showinfo(message=start_status.get_message())
 
@@ -77,8 +79,8 @@ class PlayerInterface(DogPlayerInterface):
             self.show_game_info_message(GameMessages.WAITING_OPPONENT)
 
     def receive_start(self, start_status: StartStatus):
-        self.__board.start_match(start_status.get_players())
         self.setup_game()
+        self.__board.start_match(start_status.get_players())
 
         if self.__board.is_local_player_turn():
             self.show_game_info_message(GameMessages.START_DRAG)
@@ -131,9 +133,24 @@ class PlayerInterface(DogPlayerInterface):
             self.update_piece_screen_position(from_position.x, from_position.y)
 
         else:
-            self.__board.move_piece(from_position, to_position)
+            move_to_send = self.__board.move_piece(from_position, to_position)
+
+            self.update_move_counter()
             self.update_piece_screen_position(to_position.x, to_position.y)
-            self.send_move(from_position, to_position)
+
+            self.__dog_server_interface.send_move(move_to_send)
+
+            animal_winner = move_to_send["winner"]
+            game_message = GameMessages.WAITING_OPPONENT
+
+            if animal_winner:
+                if self.__board.is_local_player_winner():
+                    game_message = GameMessages.YOU_WIN
+
+                else:
+                    game_message = GameMessages.YOU_LOSE
+
+            self.show_game_info_message(game_message)
 
         self.__dragging_item = None
 
@@ -167,14 +184,13 @@ class PlayerInterface(DogPlayerInterface):
         self.__game_move_counter["text"] = f"Movimentos: {self.__board.move_counter}"
 
     def receive_move(self, move: dict):
-        to_pos_dict: dict[str, int] | None = move["to_pos"]
-        from_pos_dict: dict[str, int] | None = move["from_pos"]
+        to_pos_coord: list[int] = move["to_pos"]
+        from_pos_coord: list[int] = move["from_pos"]
+        match_status: Literal["next", "finished"] = move["match_status"]
+        animal_winner: str | None = move["winner"]
 
-        if not to_pos_dict or not from_pos_dict:
-            return
-
-        to_pos = self.__board.get_position(to_pos_dict["x"], to_pos_dict["y"])
-        from_pos = self.__board.get_position(from_pos_dict["x"], from_pos_dict["y"])
+        to_pos = self.__board.get_position(to_pos_coord[0], to_pos_coord[1])
+        from_pos = self.__board.get_position(from_pos_coord[0], from_pos_coord[1])
 
         # Check if positions exist and if "from_pos" has a piece
         if not from_pos or not from_pos.piece or not to_pos:
@@ -186,37 +202,28 @@ class PlayerInterface(DogPlayerInterface):
         if not item or len(item) == 0:
             return
 
-        self.__board.toggle_players_turn()
         self.__board.move_piece(from_pos, to_pos)
 
         self.update_move_counter()
-        self.show_game_info_message(GameMessages.YOUR_TURN)
         self.update_piece_screen_position(to_pos.x, to_pos.y, item[0])
+
+        game_message = GameMessages.YOUR_TURN
+
+        if match_status == "finished" and animal_winner:
+            self.__board.set_winner(animal_winner)
+
+            if self.__board.is_local_player_winner():
+                game_message = GameMessages.YOU_WIN
+
+            else:
+                game_message = GameMessages.YOU_LOSE
+
+        self.show_game_info_message(game_message)
 
     def receive_withdrawal_notification(self):
         self.show_game_info_message(GameMessages.ABANDONED)
         self.__board.receive_withdrawal_notification()
         self.update_menubar()
-
-    def send_move(self, from_pos: Position, to_pos: Position):
-        # TODO evalute match finish
-        self.__board.toggle_players_turn()
-        self.__dog_server_interface.send_move(
-            {
-                "from_pos": {
-                    "x": from_pos.x,
-                    "y": from_pos.y,
-                },
-                "to_pos": {
-                    "x": to_pos.x,
-                    "y": to_pos.y,
-                },
-                "match_status": "next",
-            }
-        )
-
-        self.update_move_counter()
-        self.show_game_info_message(GameMessages.WAITING_OPPONENT)
 
     def show_game_info_message(self, message: GameMessages):
         self.__game_messages["text"] = message.value

@@ -10,6 +10,7 @@ from models.Piece import Piece
 
 class Board:
     __positions: list[Position]
+    __pieces: tuple[Piece, list[Piece]]  # Hare, Hounds
     __match_status = MatchStatus.NOT_STARTED
     __move_counter = 0
 
@@ -204,10 +205,15 @@ class Board:
 
     def __init_pieces(self):
         positions = self.__positions
-        Piece(Animal.HOUND, positions[0])  # outer_left
-        Piece(Animal.HOUND, positions[1])  # top_left
-        Piece(Animal.HOUND, positions[3])  # bottom_left
-        Piece(Animal.HARE, positions[10])  # outer_right
+
+        self.__pieces = (
+            Piece(Animal.HARE, positions[10]),  # outer_right
+            [
+                Piece(Animal.HOUND, positions[0]),  # outer_left
+                Piece(Animal.HOUND, positions[1]),  # top_left
+                Piece(Animal.HOUND, positions[3]),  # bottom_left
+            ],
+        )
 
     def get_position(self, x: int, y: int):
         for position in self.__positions:
@@ -241,9 +247,27 @@ class Board:
     def is_local_player_turn(self):
         return self.__match_status == MatchStatus.LOCAL_PLAYER_TURN
 
+    def is_local_player_winner(self):
+        return self.__local_player.is_winner
+
     def move_piece(self, from_position: Position, to_position: Position):
         piece = from_position.piece
         piece.position = to_position
+
+        move_to_send = {}
+
+        # Build move to send only if is local player turn and he made a move
+        if self.match_status == MatchStatus.LOCAL_PLAYER_TURN:
+            move_to_send["to_pos"] = [to_position.x, to_position.y]
+            move_to_send["from_pos"] = [from_position.x, from_position.y]
+
+            animal_winner = self.evaluate_match_winner()
+            move_to_send["winner"] = animal_winner.value if animal_winner else None
+            move_to_send["match_status"] = "finished" if animal_winner else "next"
+
+        self.toggle_players_turn()
+
+        return move_to_send
 
     def start_match(self, players):
         local_player = players[0]
@@ -296,7 +320,6 @@ class Board:
 
     def reset(self):
         match_status = self.__match_status
-
         # Only reset board if match was finished or abandoned
         if (
             match_status != MatchStatus.FINISHED
@@ -308,17 +331,54 @@ class Board:
         self.__canvas.delete("piece")
 
         for position in self.__positions:
-            piece = position.piece
-
-            if piece:
-                piece.position = None
+            if position.piece:
                 position.piece = None
 
         self.__init_pieces()
         self.__draw_pieces()
 
-    def evaluate_match_finish(self):
-        # TODO match finishes if move counter gets to 50 or
-        # HARE does not have an empty position to move or
-        # HOUNDS can no longer capture HARE
-        pass
+    def set_winner(self, animal: str):
+        if self.__local_player.animal.value == animal:
+            self.__local_player.set_winner()
+
+        else:
+            self.__remote_player.set_winner()
+
+        self.__match_status = MatchStatus.FINISHED
+
+    def evaluate_hare_win(self, hare: Piece, hounds: list[Piece]):
+        hare_escaped = True
+
+        for hound in hounds:
+            # Check if there's at least one hound on the left of the hare
+            if hound.position.x < hare.position.x:
+                hare_escaped = False
+                break
+
+        if hare_escaped or self.move_counter >= 50:
+            return True
+
+        return False
+
+    def evaluate_hound_win(self, hare: Piece):
+        # If there's at least one empty adjacent position from the Hare, game continues
+        for adjacent_position in hare.position.adjacent_positions:
+            if not adjacent_position.piece:
+                return False
+
+        return True
+
+    def evaluate_match_winner(self):
+        animal_winner: Animal | None = None
+        hare, hounds = self.__pieces
+
+        if self.evaluate_hare_win(hare, hounds):
+            animal_winner = Animal.HARE
+
+        if self.evaluate_hound_win(hare):
+            animal_winner = Animal.HOUND
+
+        if animal_winner:
+            self.set_winner(animal_winner.value)
+
+        return animal_winner
