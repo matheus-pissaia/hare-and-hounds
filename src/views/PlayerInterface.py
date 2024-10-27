@@ -67,8 +67,8 @@ class PlayerInterface(DogPlayerInterface):
         if code == "0" or code == "1":
             messagebox.showinfo(message=message)
         else:
-            self.__board.start_match(start_status.get_players())
             self.setup_game()
+            self.__board.start_match(start_status.get_players())
 
             messagebox.showinfo(message=start_status.get_message())
 
@@ -79,8 +79,8 @@ class PlayerInterface(DogPlayerInterface):
             self.show_game_info_message(GameMessages.WAITING_OPPONENT)
 
     def receive_start(self, start_status: StartStatus):
-        self.__board.start_match(start_status.get_players())
         self.setup_game()
+        self.__board.start_match(start_status.get_players())
 
         if self.__board.is_local_player_turn():
             self.show_game_info_message(GameMessages.START_DRAG)
