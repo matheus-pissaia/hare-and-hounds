@@ -247,8 +247,8 @@ class Board:
     def is_local_player_turn(self):
         return self.__match_status == MatchStatus.LOCAL_PLAYER_TURN
 
-    def is_local_player_animal(self, animal: str):
-        return self.__local_player.animal.value == animal
+    def is_local_player_winner(self):
+        return self.__local_player.is_winner
 
     def move_piece(self, from_position: Position, to_position: Position):
         piece = from_position.piece
@@ -338,7 +338,7 @@ class Board:
         self.__draw_pieces()
 
     def set_winner(self, animal: str):
-        if self.is_local_player_animal(animal):
+        if self.__local_player.animal.value == animal:
             self.__local_player.set_winner()
 
         else:

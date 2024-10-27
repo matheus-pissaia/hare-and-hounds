@@ -144,7 +144,7 @@ class PlayerInterface(DogPlayerInterface):
             game_message = GameMessages.WAITING_OPPONENT
 
             if animal_winner:
-                if self.__board.is_local_player_animal(animal_winner):
+                if self.__board.is_local_player_winner():
                     game_message = GameMessages.YOU_WIN
 
                 else:
@@ -212,7 +212,7 @@ class PlayerInterface(DogPlayerInterface):
         if match_status == "finished" and animal_winner:
             self.__board.set_winner(animal_winner)
 
-            if self.__board.is_local_player_animal(animal_winner):
+            if self.__board.is_local_player_winner():
                 game_message = GameMessages.YOU_WIN
 
             else:
