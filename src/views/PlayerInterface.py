@@ -133,9 +133,12 @@ class PlayerInterface(DogPlayerInterface):
             self.update_piece_screen_position(from_position.x, from_position.y)
 
         else:
-            self.__board.move_piece(from_position, to_position)
+            move_to_send = self.__board.move_piece(from_position, to_position)
+
+            self.update_move_counter()
             self.update_piece_screen_position(to_position.x, to_position.y)
-            self.send_move(from_position, to_position)
+
+            self.__dog_server_interface.send_move(move_to_send)
 
         self.__dragging_item = None
 
@@ -169,14 +172,12 @@ class PlayerInterface(DogPlayerInterface):
         self.__game_move_counter["text"] = f"Movimentos: {self.__board.move_counter}"
 
     def receive_move(self, move: dict):
-        to_pos_dict: dict[str, int] | None = move["to_pos"]
-        from_pos_dict: dict[str, int] | None = move["from_pos"]
+        to_pos_coord: list[int] = move["to_pos"]
+        from_pos_coord: list[int] = move["from_pos"]
+        match_status: Literal["next", "finished"] = move["match_status"]
 
-        if not to_pos_dict or not from_pos_dict:
-            return
-
-        to_pos = self.__board.get_position(to_pos_dict["x"], to_pos_dict["y"])
-        from_pos = self.__board.get_position(from_pos_dict["x"], from_pos_dict["y"])
+        to_pos = self.__board.get_position(to_pos_coord[0], to_pos_coord[1])
+        from_pos = self.__board.get_position(from_pos_coord[0], from_pos_coord[1])
 
         # Check if positions exist and if "from_pos" has a piece
         if not from_pos or not from_pos.piece or not to_pos:
@@ -188,37 +189,15 @@ class PlayerInterface(DogPlayerInterface):
         if not item or len(item) == 0:
             return
 
-        self.__board.toggle_players_turn()
         self.__board.move_piece(from_pos, to_pos)
 
         self.update_move_counter()
-        self.show_game_info_message(GameMessages.YOUR_TURN)
         self.update_piece_screen_position(to_pos.x, to_pos.y, item[0])
 
     def receive_withdrawal_notification(self):
         self.show_game_info_message(GameMessages.ABANDONED)
         self.__board.receive_withdrawal_notification()
         self.update_menubar()
-
-    def send_move(self, from_pos: Position, to_pos: Position):
-        # TODO evalute match finish
-        self.__board.toggle_players_turn()
-        self.__dog_server_interface.send_move(
-            {
-                "from_pos": {
-                    "x": from_pos.x,
-                    "y": from_pos.y,
-                },
-                "to_pos": {
-                    "x": to_pos.x,
-                    "y": to_pos.y,
-                },
-                "match_status": "next",
-            }
-        )
-
-        self.update_move_counter()
-        self.show_game_info_message(GameMessages.WAITING_OPPONENT)
 
     def show_game_info_message(self, message: GameMessages):
         self.__game_messages["text"] = message.value

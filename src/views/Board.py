@@ -245,6 +245,21 @@ class Board:
         piece = from_position.piece
         piece.position = to_position
 
+        move_to_send = {}
+
+        # Build move to send only if is local player turn and he made a move
+        if self.match_status == MatchStatus.LOCAL_PLAYER_TURN:
+            move_to_send["to_pos"] = [to_position.x, to_position.y]
+            move_to_send["from_pos"] = [from_position.x, from_position.y]
+
+            animal_winner = self.evaluate_match_winner()
+            move_to_send["winner"] = animal_winner.value if animal_winner else None
+            move_to_send["match_status"] = "finished" if animal_winner else "next"
+
+        self.toggle_players_turn()
+
+        return move_to_send
+
     def start_match(self, players):
         local_player = players[0]
         remote_player = players[1]
