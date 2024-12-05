@@ -189,18 +189,12 @@ class PlayerInterface(DogPlayerInterface):
         match_status: Literal["next", "finished"] = move["match_status"]
         animal_winner: str | None = move["winner"]
 
+        # It is safe to assume that positions exists since we check before sending the move
         to_pos = self.__board.get_position(to_pos_coord[0], to_pos_coord[1])
         from_pos = self.__board.get_position(from_pos_coord[0], from_pos_coord[1])
 
-        # Check if positions exist and if "from_pos" has a piece
-        if not from_pos or not from_pos.piece or not to_pos:
-            return
-
         # Find closest piece from "from_pos"
         item = self.__canvas.find_closest(from_pos.x, from_pos.y)
-
-        if not item or len(item) == 0:
-            return
 
         self.__board.move_piece(from_pos, to_pos)
 
