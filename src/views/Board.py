@@ -134,86 +134,87 @@ class Board:
 
         mid_x, mid_y = window_width / 2, window_height / 2
 
-        positions_dict = {}
+        rows = 3
+        cols = 5
 
-        # posicoes tabuleiro
-        positions_dict["outer_left"] = Position(mid_x - (self.__gap_px * 2), mid_y)
-        positions_dict["top_left"] = Position(
-            mid_x - self.__gap_px, mid_y - self.__gap_px
-        )
-        positions_dict["middle_left"] = Position(mid_x - self.__gap_px, mid_y)
-        positions_dict["bottom_left"] = Position(
-            mid_x - self.__gap_px, mid_y + self.__gap_px
-        )
-        positions_dict["top"] = Position(mid_x, mid_y - self.__gap_px)
-        positions_dict["middle"] = Position(mid_x, mid_y)
-        positions_dict["bottom"] = Position(mid_x, mid_y + self.__gap_px)
-        positions_dict["top_right"] = Position(
-            mid_x + self.__gap_px, mid_y - self.__gap_px
-        )
-        positions_dict["middle_right"] = Position(mid_x + self.__gap_px, mid_y)
-        positions_dict["bottom_right"] = Position(
-            mid_x + self.__gap_px, mid_y + self.__gap_px
-        )
-        positions_dict["outer_right"] = Position(mid_x + (self.__gap_px * 2), mid_y)
+        # A temporary 3x5 matrix used to initialize all the positions
+        positions_matrix = [[] for _ in range(rows)]
 
-        # posicoes adjacentes
-        positions_dict["outer_left"].add_adjacent_position(positions_dict["top_left"])
-        positions_dict["outer_left"].add_adjacent_position(
-            positions_dict["middle_left"]
-        )
-        positions_dict["outer_left"].add_adjacent_position(
-            positions_dict["bottom_left"]
-        )
+        # Direction vectors starting from the 4 (up, down, left, right) main directions
+        dx = [0, 0, -1, 1, 1, 1, -1, -1]
+        dy = [1, -1, 0, 0, 1, -1, 1, -1]
 
-        positions_dict["top"].add_adjacent_position(positions_dict["top_left"])
-        positions_dict["top"].add_adjacent_position(positions_dict["top_right"])
+        # Loop to create all positions
+        for i in range(rows):
+            for j in range(cols):
+                # If the coord is one of the 4 board corners, append `None`
+                if (i == 0 or i == rows - 1) and (j == 0 or j == cols - 1):
+                    positions_matrix[i].append(None)
 
-        positions_dict["middle_right"].add_adjacent_position(
-            positions_dict["top_right"]
-        )
-        positions_dict["middle_right"].add_adjacent_position(
-            positions_dict["bottom_right"]
-        )
+                else:
+                    x = mid_x + self.__gap_px * (j - 2)
+                    y = mid_y + self.__gap_px * (i - 1)
+                    positions_matrix[i].append(Position(x, y))
 
-        positions_dict["bottom"].add_adjacent_position(positions_dict["bottom_left"])
-        positions_dict["bottom"].add_adjacent_position(positions_dict["bottom_right"])
+        # Loop to add adjacent positions
+        for i in range(rows):
+            for j in range(cols):
+                position = positions_matrix[i][j]
 
-        positions_dict["middle_left"].add_adjacent_position(positions_dict["top_left"])
-        positions_dict["middle_left"].add_adjacent_position(
-            positions_dict["bottom_left"]
-        )
+                if not position:
+                    continue
 
-        positions_dict["middle"].add_adjacent_position(positions_dict["top"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["bottom"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["middle_left"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["middle_right"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["top_left"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["top_right"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["bottom_left"])
-        positions_dict["middle"].add_adjacent_position(positions_dict["bottom_right"])
+                # Add adjacent positions in all directions if row + col is odd,
+                # else only in the 4 main directions (up, down, left, right).
+                direction_range = 8 if i + j % 2 == 1 else 4
 
-        positions_dict["outer_right"].add_adjacent_position(positions_dict["top_right"])
-        positions_dict["outer_right"].add_adjacent_position(
-            positions_dict["middle_right"]
-        )
-        positions_dict["outer_right"].add_adjacent_position(
-            positions_dict["bottom_right"]
-        )
+                for k in range(direction_range):
+                    new_x = i + dx[k]
+                    new_y = j + dy[k]
 
-        self.__positions = list(positions_dict.values())
+                    # Check if x and y are within matrix bounds
+                    if (
+                        new_x >= 0
+                        and new_x < rows
+                        and new_y >= 0
+                        and new_y < cols
+                        and positions_matrix[new_x][new_y]
+                    ):
+                        position.add_adjacent_position(positions_matrix[new_x][new_y])
+
+        # Flatten the matrix
+        positions = [item for sublist in positions_matrix for item in sublist]
+
+        # Filter out None values
+        self.__positions = list(filter(None, positions))
+
+        # Sort positions by x coordinate to initialize pieces on the sides of the board
+        self.__positions.sort(key=lambda position: position.x)
 
     def __init_pieces(self):
-        positions = self.__positions
+        # Get first position to init Hounds (leftmost position)
+        first_position = self.__positions[0]
 
-        self.__pieces = (
-            Piece(Animal.HARE, positions[10]),  # outer_right
-            [
-                Piece(Animal.HOUND, positions[0]),  # outer_left
-                Piece(Animal.HOUND, positions[1]),  # top_left
-                Piece(Animal.HOUND, positions[3]),  # bottom_left
-            ],
-        )
+        # List of positions where hounds are placed when the game starts
+        hound_initial_positions = [first_position]
+
+        # Hounds are placed at the leftmost position and its adjacent diagonal positions.
+        for adjacent_position in first_position.adjacent_positions:
+            if (
+                adjacent_position.x != first_position.x
+                and adjacent_position.y != first_position.y
+            ):
+                hound_initial_positions.append(adjacent_position)
+
+        hounds = []
+
+        for initial_position in hound_initial_positions:
+            hounds.append(Piece(Animal.HOUND, initial_position))
+
+        # Get last position to init Hare (rightmost position)
+        last_position = self.__positions[-1]
+
+        self.__pieces = (Piece(Animal.HARE, last_position), hounds)
 
     def get_position(self, x: int, y: int):
         for position in self.__positions:
