@@ -129,37 +129,53 @@ class Board:
         # Make sure to update TK before getting width and height
         self.__tk.update()
 
-        window_width = self.__canvas.winfo_width()
-        window_height = self.__canvas.winfo_height()
-
-        mid_x, mid_y = window_width / 2, window_height / 2
-
         rows = 3
         cols = 5
 
         # A temporary 3x5 matrix used to initialize all the positions
         positions_matrix = [[] for _ in range(rows)]
 
-        # Direction vectors starting from the 4 (up, down, left, right) main directions
-        dx = [0, 0, -1, 1, 1, 1, -1, -1]
-        dy = [1, -1, 0, 0, 1, -1, 1, -1]
+        self.__populate_positions_matrix(positions_matrix, rows, cols)
+        self.__set_adjacent_positions(positions_matrix)
 
-        # Loop to create all positions
+        # Flatten the matrix
+        positions = [item for sublist in positions_matrix for item in sublist]
+
+        # Filter out None values
+        self.__positions = list(filter(None, positions))
+
+        # Sort positions by x coordinate to initialize pieces on the sides of the board
+        self.__positions.sort(key=lambda position: position.x)
+
+    def __populate_positions_matrix(self, matrix: list[list], rows=3, cols=5):
+        window_width = self.__canvas.winfo_width()
+        window_height = self.__canvas.winfo_height()
+
+        mid_x, mid_y = window_width / 2, window_height / 2
+
         for i in range(rows):
             for j in range(cols):
                 # If the coord is one of the 4 board corners, append `None`
                 if (i == 0 or i == rows - 1) and (j == 0 or j == cols - 1):
-                    positions_matrix[i].append(None)
+                    matrix[i].append(None)
 
                 else:
                     x = mid_x + self.__gap_px * (j - 2)
                     y = mid_y + self.__gap_px * (i - 1)
-                    positions_matrix[i].append(Position(x, y))
+                    matrix[i].append(Position(x, y))
 
-        # Loop to add adjacent positions
+    def __set_adjacent_positions(self, matrix: list[list[Position]]):
+        rows = len(matrix)
+        cols = len(matrix[0])
+
+        # Direction vectors starting from the 4 (up, down, left, right) main
+        # directions and then the 4 diagonal directions
+        dx = [0, 0, -1, 1, 1, 1, -1, -1]
+        dy = [1, -1, 0, 0, 1, -1, 1, -1]
+
         for i in range(rows):
             for j in range(cols):
-                position = positions_matrix[i][j]
+                position = matrix[i][j]
 
                 if not position:
                     continue
@@ -178,18 +194,9 @@ class Board:
                         and new_x < rows
                         and new_y >= 0
                         and new_y < cols
-                        and positions_matrix[new_x][new_y]
+                        and matrix[new_x][new_y]
                     ):
-                        position.add_adjacent_position(positions_matrix[new_x][new_y])
-
-        # Flatten the matrix
-        positions = [item for sublist in positions_matrix for item in sublist]
-
-        # Filter out None values
-        self.__positions = list(filter(None, positions))
-
-        # Sort positions by x coordinate to initialize pieces on the sides of the board
-        self.__positions.sort(key=lambda position: position.x)
+                        position.add_adjacent_position(matrix[new_x][new_y])
 
     def __init_pieces(self):
         # Get first position to init Hounds (leftmost position)
