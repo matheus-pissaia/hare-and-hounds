@@ -129,8 +129,7 @@ class Board:
         # Make sure to update TK before getting width and height
         self.__tk.update()
 
-        rows = 3
-        cols = 5
+        rows, cols = 3, 5
 
         # A temporary 3x5 matrix used to initialize all the positions
         positions_matrix = [[] for _ in range(rows)]
