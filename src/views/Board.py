@@ -201,21 +201,26 @@ class Board:
         # Get first position to init Hounds (leftmost position)
         first_position = self.__positions[0]
 
-        # List of positions where hounds are placed when the game starts
-        hound_initial_positions = [first_position]
-
-        # Hounds are placed at the leftmost position and its adjacent diagonal positions.
-        for adjacent_position in first_position.adjacent_positions:
-            if (
-                adjacent_position.x != first_position.x
-                and adjacent_position.y != first_position.y
-            ):
-                hound_initial_positions.append(adjacent_position)
-
         hounds = []
 
-        for initial_position in hound_initial_positions:
-            hounds.append(Piece(Animal.HOUND, initial_position))
+        # For loop to init Hounds
+        for _ in range(3):
+            # If the first position is empty, add a Hound to it
+            if not first_position.piece:
+                hounds.append(Piece(Animal.HOUND, first_position))
+                continue
+
+            # Iterate over the adjacent positions of the first position
+            for adjacent_position in first_position.adjacent_positions:
+                # If the adjacent position is not in the same row as the first
+                # and if it is empty
+                if (
+                    adjacent_position.y != first_position.y
+                    and not adjacent_position.piece
+                ):
+                    # Add a Hound to the adjacent position
+                    hounds.append(Piece(Animal.HOUND, adjacent_position))
+                    break
 
         # Get last position to init Hare (rightmost position)
         last_position = self.__positions[-1]
