@@ -63,6 +63,9 @@ class Board:
             or self.__match_status == MatchStatus.REMOTE_PLAYER_TURN
         )
 
+    def is_match_finished(self):
+        return self.__match_status == MatchStatus.FINISHED
+
     def draw_board(self):
         self.__draw_edges()
         self.__draw_positions()

@@ -140,15 +140,14 @@ class PlayerInterface(DogPlayerInterface):
 
             self.__dog_server_interface.send_move(move_to_send)
 
-            animal_winner = move_to_send["winner"]
             game_message = GameMessages.WAITING_OPPONENT
 
-            if animal_winner:
-                if self.__board.is_local_player_winner():
-                    game_message = GameMessages.YOU_WIN
-
-                else:
-                    game_message = GameMessages.YOU_LOSE
+            if self.__board.is_match_finished():
+                game_message = (
+                    GameMessages.YOU_WIN
+                    if self.__board.is_local_player_winner()
+                    else GameMessages.YOU_LOSE
+                )
 
             self.show_game_info_message(game_message)
 
